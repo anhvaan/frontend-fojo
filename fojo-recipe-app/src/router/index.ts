@@ -6,6 +6,7 @@ import RecipeCreateView from '../views/RecipeCreateView.vue'
 import RecipeDetailView from '../views/RecipeDetailView.vue'
 import RecipeEditView from '../views/RecipeEditView.vue'
 import { useAuthStore } from '../stores/auth'
+import type { Router, NavigationGuardNext, RouteLocationNormalized } from 'vue-router'
 
 const routes = [
   {
@@ -53,10 +54,11 @@ const routes = [
 ]
 
 // Navigation guard
-export function setupNavigationGuards(router) {
-  router.beforeEach((to, from, next) => {
-    const authStore = useAuthStore()
-    const isLoggedIn = authStore.isLoggedIn
+export function setupNavigationGuards(router: Router): void {
+  router.beforeEach(
+    (to: RouteLocationNormalized, from: RouteLocationNormalized, next: NavigationGuardNext) => {
+      const authStore = useAuthStore()
+      const isLoggedIn = authStore.isLoggedIn
 
     // Route requires authentication
     if (to.meta.requiresAuth && !isLoggedIn) {
