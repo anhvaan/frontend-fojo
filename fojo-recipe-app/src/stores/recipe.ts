@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import axios from 'axios'
 import { useAuthStore } from './auth'
 
 export interface Recipe {
@@ -29,67 +30,56 @@ export interface RecipeFormData {
   imageUrl?: string
 }
 
+const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL
+
 export const useRecipeStore = defineStore('recipe', () => {
-  // State
   const recipes = ref<Recipe[]>([])
   const isLoading = ref(false)
   const error = ref<string | null>(null)
 
   const authStore = useAuthStore()
 
-  // Computed
-  const userRecipes = computed(() => {
-    return recipes.value.filter((recipe) => recipe.userId === authStore.user?.id)
-  })
+  const userRecipes = computed(() =>
+    recipes.value.filter(recipe => recipe.userId === authStore.user?.id)
+  )
 
-  const favoriteRecipes = computed(() => {
-    return userRecipes.value.filter((recipe) => recipe.isFavorite)
-  })
+  const favoriteRecipes = computed(() =>
+    userRecipes.value.filter(recipe => recipe.isFavorite)
+  )
 
-  // Initialize recipes from localStorage
-  function initializeRecipes() {
-    const savedRecipes = localStorage.getItem('fojo-recipes')
-    if (savedRecipes) {
-      try {
-        recipes.value = JSON.parse(savedRecipes)
-      } catch (e) {
-        console.error('Failed to parse recipes from localStorage', e)
-        localStorage.removeItem('fojo-recipes')
-      }
-    }
-  }
-
-  // Save recipes to localStorage
-  function saveRecipes() {
-    localStorage.setItem('fojo-recipes', JSON.stringify(recipes.value))
-  }
-
-  // Get recipe by ID
-  function getRecipeById(id: string) {
-    return recipes.value.find((recipe) => recipe.id === id)
-  }
-
-  // Toggle favorite status
-  function toggleFavorite(id: string) {
-    const recipe = recipes.value.find((r) => r.id === id)
-    if (recipe && recipe.userId === authStore.user?.id) {
-      recipe.isFavorite = !recipe.isFavorite
-      saveRecipes()
-    }
-  }
-
-  // Create recipe
-  function createRecipe(recipeData: RecipeFormData) {
+  // Rezepte vom Backend laden
+  async function loadRecipes() {
     isLoading.value = true
     error.value = null
-
     try {
-      if (!authStore.user) {
-        throw new Error('User not authenticated')
-      }
+      const res = await axios.get(`${baseUrl}/api/recipes`)
+      recipes.value = res.data
+    } catch (err) {
+      error.value = 'Fehler beim Laden der Rezepte'
+      console.error(err)
+    } finally {
+      isLoading.value = false
+    }
+  }
 
-      const newRecipe: Recipe = {
-        id: Date.now().toString(),
+  function getRecipeById(id: string) {
+    return recipes.value.find(recipe => recipe.id === id)
+  }
+
+  function toggleFavorite(id: string) {
+    const recipe = recipes.value.find(r => r.id === id)
+    if (recipe && recipe.userId === authStore.user?.id) {
+      recipe.isFavorite = !recipe.isFavorite
+    }
+  }
+
+  async function createRecipe(recipeData: RecipeFormData) {
+    isLoading.value = true
+    error.value = null
+    try {
+      if (!authStore.user) throw new Error('User not authenticated')
+
+      const newRecipePayload = {
         ...recipeData,
         userId: authStore.user.id,
         isFavorite: false,
@@ -97,90 +87,73 @@ export const useRecipeStore = defineStore('recipe', () => {
         updatedAt: new Date().toISOString(),
       }
 
-      recipes.value.push(newRecipe)
-      saveRecipes()
-
-      return { success: true, recipeId: newRecipe.id }
+      const res = await axios.post(`${baseUrl}/api/recipes`, newRecipePayload)
+      recipes.value.push(res.data)
+      return { success: true, recipeId: res.data.id }
     } catch (err) {
-      console.error('Recipe creation error:', err)
-      error.value = 'Failed to create recipe'
+      error.value = 'Fehler beim Erstellen des Rezepts'
+      console.error(err)
       return { success: false, error: error.value }
     } finally {
       isLoading.value = false
     }
   }
 
-  // Update recipe
-  function updateRecipe(id: string, recipeData: RecipeFormData) {
+  async function updateRecipe(id: string, recipeData: RecipeFormData) {
     isLoading.value = true
     error.value = null
-
     try {
-      const index = recipes.value.findIndex((recipe) => recipe.id === id)
+      const recipe = recipes.value.find(r => r.id === id)
+      if (!recipe) throw new Error('Rezept nicht gefunden')
 
-      if (index === -1) {
-        throw new Error('Recipe not found')
-      }
-
-      const recipe = recipes.value[index]
-
-      // Check ownership
       if (recipe.userId !== authStore.user?.id) {
-        throw new Error('Not authorized to update this recipe')
+        throw new Error('Nicht berechtigt zur Bearbeitung')
       }
 
-      // Update recipe
-      recipes.value[index] = {
+      const updatedRecipe = {
         ...recipe,
         ...recipeData,
         updatedAt: new Date().toISOString(),
       }
 
-      saveRecipes()
+      const res = await axios.put(`${baseUrl}/api/recipes/${id}`, updatedRecipe)
+
+      const index = recipes.value.findIndex(r => r.id === id)
+      if (index !== -1) recipes.value[index] = res.data
 
       return { success: true }
     } catch (err) {
-      console.error('Recipe update error:', err)
-      error.value = err instanceof Error ? err.message : 'Failed to update recipe'
+      error.value = 'Fehler beim Aktualisieren'
+      console.error(err)
       return { success: false, error: error.value }
     } finally {
       isLoading.value = false
     }
   }
 
-  // Delete recipe
-  function deleteRecipe(id: string) {
+  async function deleteRecipe(id: string) {
     isLoading.value = true
     error.value = null
-
     try {
-      const recipe = recipes.value.find((recipe) => recipe.id === id)
+      const recipe = recipes.value.find(r => r.id === id)
+      if (!recipe) throw new Error('Rezept nicht gefunden')
 
-      if (!recipe) {
-        throw new Error('Recipe not found')
-      }
-
-      // Check ownership
       if (recipe.userId !== authStore.user?.id) {
-        throw new Error('Not authorized to delete this recipe')
+        throw new Error('Nicht berechtigt zum Löschen')
       }
 
-      // Delete recipe
-      recipes.value = recipes.value.filter((recipe) => recipe.id !== id)
-      saveRecipes()
+      await axios.delete(`${baseUrl}/api/recipes/${id}`)
+      recipes.value = recipes.value.filter(r => r.id !== id)
 
       return { success: true }
     } catch (err) {
-      console.error('Recipe deletion error:', err)
-      error.value = err instanceof Error ? err.message : 'Failed to delete recipe'
+      error.value = 'Fehler beim Löschen des Rezepts'
+      console.error(err)
       return { success: false, error: error.value }
     } finally {
       isLoading.value = false
     }
   }
-
-  // Initialize store
-  initializeRecipes()
 
   return {
     recipes,
@@ -188,6 +161,7 @@ export const useRecipeStore = defineStore('recipe', () => {
     favoriteRecipes,
     isLoading,
     error,
+    loadRecipes,
     getRecipeById,
     createRecipe,
     updateRecipe,
