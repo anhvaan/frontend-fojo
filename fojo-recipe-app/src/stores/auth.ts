@@ -49,7 +49,7 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null
 
     try {
-      // Mock login - in a real app, this would be an API call
+      // Mock login
       await new Promise((resolve) => setTimeout(resolve, 800)) // Simulate network delay
 
       // Demo authentication logic - for demonstration only
@@ -80,7 +80,7 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null
 
     try {
-      // Mock registration - in a real app, this would be an API call
+      // Mock registration
       await new Promise((resolve) => setTimeout(resolve, 800)) // Simulate network delay
 
       // Check if email is already taken
