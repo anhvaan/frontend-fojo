@@ -47,13 +47,14 @@ export const useRecipeStore = defineStore('recipe', () => {
     userRecipes.value.filter(recipe => recipe.isFavorite)
   )
 
-  // Rezepte vom Backend laden
   async function loadRecipes() {
     isLoading.value = true
     error.value = null
     try {
-      const res = await axios.get(`${baseUrl}/api/recipes`)
-      recipes.value = res.data
+      const response = await axios.get(`${baseUrl}/api/recipes`, {
+        withCredentials: true,
+      })
+      recipes.value = response.data
     } catch (err) {
       error.value = 'Fehler beim Laden der Rezepte'
       console.error(err)
@@ -79,17 +80,16 @@ export const useRecipeStore = defineStore('recipe', () => {
     try {
       if (!authStore.user) throw new Error('User not authenticated')
 
-      const newRecipePayload = {
-        ...recipeData,
-        userId: authStore.user.id,
-        isFavorite: false,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      }
+      const payload = { ...recipeData }
 
-      const res = await axios.post(`${baseUrl}/api/recipes`, newRecipePayload)
-      recipes.value.push(res.data)
-      return { success: true, recipeId: res.data.id }
+      const response = await axios.post(`${baseUrl}/api/recipes`, payload, {
+        withCredentials: true,
+      })
+
+      const newRecipe: Recipe = response.data
+      recipes.value.push(newRecipe)
+
+      return { success: true, recipeId: newRecipe.id }
     } catch (err) {
       error.value = 'Fehler beim Erstellen des Rezepts'
       console.error(err)
@@ -103,23 +103,24 @@ export const useRecipeStore = defineStore('recipe', () => {
     isLoading.value = true
     error.value = null
     try {
-      const recipe = recipes.value.find(r => r.id === id)
-      if (!recipe) throw new Error('Rezept nicht gefunden')
-
-      if (recipe.userId !== authStore.user?.id) {
+      const existing = recipes.value.find(r => r.id === id)
+      if (!existing) throw new Error('Rezept nicht gefunden')
+      if (existing.userId !== authStore.user?.id) {
         throw new Error('Nicht berechtigt zur Bearbeitung')
       }
 
       const updatedRecipe = {
-        ...recipe,
+        ...existing,
         ...recipeData,
         updatedAt: new Date().toISOString(),
       }
 
-      const res = await axios.put(`${baseUrl}/api/recipes/${id}`, updatedRecipe)
+      const response = await axios.put(`${baseUrl}/api/recipes/${id}`, updatedRecipe, {
+        withCredentials: true,
+      })
 
       const index = recipes.value.findIndex(r => r.id === id)
-      if (index !== -1) recipes.value[index] = res.data
+      if (index !== -1) recipes.value[index] = response.data
 
       return { success: true }
     } catch (err) {
@@ -137,12 +138,14 @@ export const useRecipeStore = defineStore('recipe', () => {
     try {
       const recipe = recipes.value.find(r => r.id === id)
       if (!recipe) throw new Error('Rezept nicht gefunden')
-
       if (recipe.userId !== authStore.user?.id) {
         throw new Error('Nicht berechtigt zum Löschen')
       }
 
-      await axios.delete(`${baseUrl}/api/recipes/${id}`)
+      await axios.delete(`${baseUrl}/api/recipes/${id}`, {
+        withCredentials: true,
+      })
+
       recipes.value = recipes.value.filter(r => r.id !== id)
 
       return { success: true }
@@ -156,11 +159,14 @@ export const useRecipeStore = defineStore('recipe', () => {
   }
 
   return {
+    // State
     recipes,
     userRecipes,
     favoriteRecipes,
     isLoading,
     error,
+
+    // Actions
     loadRecipes,
     getRecipeById,
     createRecipe,
