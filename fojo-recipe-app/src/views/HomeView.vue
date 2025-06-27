@@ -11,8 +11,8 @@ const username = computed(() => authStore.user?.username || 'Chef')
 const recipes = computed(() => recipeStore.userRecipes)
 const hasRecipes = computed(() => recipes.value.length > 0)
 
-onMounted(() => {
-  // Initialize recipes if needed
+onMounted(async () => {
+  await recipeStore.loadRecipes()
 })
 </script>
 
