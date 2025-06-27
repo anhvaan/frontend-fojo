@@ -12,7 +12,7 @@ const recipes = computed(() => recipeStore.userRecipes)
 const hasRecipes = computed(() => recipes.value.length > 0)
 
 onMounted(() => {
-  recipeStore.loadRecipes()
+  // Initialize recipes if needed
 })
 </script>
 
@@ -36,7 +36,7 @@ onMounted(() => {
           <h2>No recipes yet</h2>
           <p>Your recipe collection is empty. Start by creating your first recipe!</p>
           <router-link to="/recipes/create" class="btn btn-primary mt-2"
-            >Create First Recipe</router-link
+          >Create First Recipe</router-link
           >
         </div>
       </div>
