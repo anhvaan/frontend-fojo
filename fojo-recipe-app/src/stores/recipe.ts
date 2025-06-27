@@ -30,7 +30,7 @@ export interface RecipeFormData {
   imageUrl?: string
 }
 
-const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL
+const baseUrl = 'http://localhost:8080'
 
 export const useRecipeStore = defineStore('recipe', () => {
   const recipes = ref<Recipe[]>([])
@@ -51,9 +51,7 @@ export const useRecipeStore = defineStore('recipe', () => {
     isLoading.value = true
     error.value = null
     try {
-      const response = await axios.get(`${baseUrl}/api/recipes`, {
-        withCredentials: true,
-      })
+      const response = await axios.get(`${baseUrl}/api/recipes`)
       recipes.value = response.data
     } catch (err) {
       error.value = 'Fehler beim Laden der Rezepte'
@@ -80,11 +78,12 @@ export const useRecipeStore = defineStore('recipe', () => {
     try {
       if (!authStore.user) throw new Error('User not authenticated')
 
-      const payload = { ...recipeData }
+      const payload = {
+        ...recipeData,
+        userId: authStore.user.id
+      }
 
-      const response = await axios.post(`${baseUrl}/api/recipes`, payload, {
-        withCredentials: true,
-      })
+      const response = await axios.post(`${baseUrl}/api/recipes`, payload)
 
       const newRecipe: Recipe = response.data
       recipes.value.push(newRecipe)
@@ -109,15 +108,13 @@ export const useRecipeStore = defineStore('recipe', () => {
         throw new Error('Nicht berechtigt zur Bearbeitung')
       }
 
-      const updatedRecipe = {
-        ...existing,
+      const payload = {
         ...recipeData,
-        updatedAt: new Date().toISOString(),
+        userId: existing.userId,
+        isFavorite: existing.isFavorite
       }
 
-      const response = await axios.put(`${baseUrl}/api/recipes/${id}`, updatedRecipe, {
-        withCredentials: true,
-      })
+      const response = await axios.put(`${baseUrl}/api/recipes/${id}`, payload)
 
       const index = recipes.value.findIndex(r => r.id === id)
       if (index !== -1) recipes.value[index] = response.data
@@ -142,9 +139,7 @@ export const useRecipeStore = defineStore('recipe', () => {
         throw new Error('Nicht berechtigt zum Löschen')
       }
 
-      await axios.delete(`${baseUrl}/api/recipes/${id}`, {
-        withCredentials: true,
-      })
+      await axios.delete(`${baseUrl}/api/recipes/${id}`)
 
       recipes.value = recipes.value.filter(r => r.id !== id)
 

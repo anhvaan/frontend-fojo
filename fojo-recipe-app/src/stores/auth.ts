@@ -27,8 +27,10 @@ export const useAuthStore = defineStore('auth', () => {
   // Computed
   const isLoggedIn = computed(() => !!user.value)
 
-  // Mock user database (for demo purposes)
-  const users = ref<User[]>([{ id: '1', username: 'demo', email: 'demo@example.com' }])
+  // Mock user database with passwords (for demo purposes)
+  const users = ref<Array<User & { password: string }>>([
+    { id: '1', username: 'demo', email: 'demo@example.com', password: 'password' }
+  ])
 
   // Initialize auth from localStorage
   function initializeAuth() {
@@ -52,14 +54,20 @@ export const useAuthStore = defineStore('auth', () => {
       // Mock login
       await new Promise((resolve) => setTimeout(resolve, 800)) // Simulate network delay
 
-      // Demo authentication logic - for demonstration only
-      if (credentials.email === 'demo@example.com' && credentials.password === 'password') {
-        const foundUser = users.value.find((u) => u.email === credentials.email)
-        if (foundUser) {
-          user.value = foundUser
-          localStorage.setItem('fojo-user', JSON.stringify(foundUser))
-          return { success: true }
+      // Find user by email and check password
+      const foundUser = users.value.find((u) => u.email === credentials.email)
+
+      if (foundUser && foundUser.password === credentials.password) {
+        // Create user object without password for storage
+        const userToStore: User = {
+          id: foundUser.id,
+          username: foundUser.username,
+          email: foundUser.email
         }
+
+        user.value = userToStore
+        localStorage.setItem('fojo-user', JSON.stringify(userToStore))
+        return { success: true }
       }
 
       // Authentication failed
@@ -89,15 +97,23 @@ export const useAuthStore = defineStore('auth', () => {
         return { success: false, error: error.value }
       }
 
-      // Create new user
-      const newUser: User = {
+      // Create new user with password
+      const newUserWithPassword = {
         id: (users.value.length + 1).toString(),
         username: data.username,
         email: data.email,
+        password: data.password, // Store password for demo purposes
       }
 
       // Add to "database"
-      users.value.push(newUser)
+      users.value.push(newUserWithPassword)
+
+      // Create user object without password for storage
+      const newUser: User = {
+        id: newUserWithPassword.id,
+        username: newUserWithPassword.username,
+        email: newUserWithPassword.email,
+      }
 
       // Auto login
       user.value = newUser
