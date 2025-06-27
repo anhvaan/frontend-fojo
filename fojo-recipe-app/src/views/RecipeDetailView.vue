@@ -41,8 +41,8 @@ const confirmDelete = () => {
   }
 }
 
-const deleteRecipe = async () => {
-  const result = await recipeStore.deleteRecipe(recipeId.value)
+const deleteRecipe = () => {
+  const result = recipeStore.deleteRecipe(recipeId.value)
 
   if (result.success) {
     router.push('/')

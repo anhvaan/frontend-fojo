@@ -33,7 +33,7 @@ const initialFormData = computed<RecipeFormData | undefined>(() => {
 })
 
 const handleSubmit = async (formData: RecipeFormData) => {
-  const result = await recipeStore.updateRecipe(recipeId.value, formData)
+  const result = recipeStore.updateRecipe(recipeId.value, formData)
 
   if (result.success) {
     router.push(`/recipes/${recipeId.value}`)
