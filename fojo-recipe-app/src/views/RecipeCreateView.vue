@@ -8,10 +8,9 @@ const router = useRouter()
 const recipeStore = useRecipeStore()
 
 const handleSubmit = async (formData: RecipeFormData) => {
-  const result = recipeStore.createRecipe(formData)
-
+  const result = await recipeStore.createRecipe(formData);
   if (result.success) {
-    router.push(`/recipes/${result.recipeId}`)
+    router.push(`/recipes/${result.recipeId}`);
   }
 }
 
