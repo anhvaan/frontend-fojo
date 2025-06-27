@@ -65,10 +65,32 @@ export const useRecipeStore = defineStore('recipe', () => {
     return recipes.value.find(recipe => recipe.id === id)
   }
 
-  function toggleFavorite(id: string) {
+  async function toggleFavorite(id: string) {
     const recipe = recipes.value.find(r => r.id === id)
-    if (recipe && recipe.userId === authStore.user?.id) {
-      recipe.isFavorite = !recipe.isFavorite
+    if (!recipe || recipe.userId !== authStore.user?.id) return
+
+    isLoading.value = true
+    error.value = null
+
+    try {
+      // API-Call an Backend
+      const response = await axios.patch(`${baseUrl}/api/recipes/${id}/favorite`, {
+        isFavorite: !recipe.isFavorite
+      })
+
+      // Frontend aktualisieren mit Backend-Response
+      const index = recipes.value.findIndex(r => r.id === id)
+      if (index !== -1) {
+        recipes.value[index] = response.data
+      }
+
+      return { success: true }
+    } catch (err) {
+      error.value = 'Fehler beim Aktualisieren der Favoriten'
+      console.error(err)
+      return { success: false, error: error.value }
+    } finally {
+      isLoading.value = false
     }
   }
 
