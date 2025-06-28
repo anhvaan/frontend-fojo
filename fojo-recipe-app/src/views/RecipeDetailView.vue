@@ -9,12 +9,23 @@ const route = useRoute()
 const recipeStore = useRecipeStore()
 const authStore = useAuthStore()
 
+// String beibehalten für Store, aber konvertieren für Vergleiche
 const recipeId = computed(() => route.params.id as string)
+
 const isLoading = ref(true)
 const error = ref<string | null>(null)
 
 const recipe = computed(() => {
-  return recipeStore.getRecipeById(recipeId.value)
+  console.log('Original Recipe ID from URL:', recipeId.value, typeof recipeId.value)
+
+  // Debugging: Store state checken
+  if (recipeStore.recipes && recipeStore.recipes.length > 0) {
+    console.log('First recipe ID in store:', recipeStore.recipes[0].id, typeof recipeStore.recipes[0].id)
+  }
+
+  const foundRecipe = recipeStore.getRecipeById(recipeId.value)
+  console.log('Found recipe:', foundRecipe ? 'YES' : 'NO')
+  return foundRecipe
 })
 
 const isOwner = computed(() => {
@@ -56,9 +67,20 @@ const editRecipe = () => {
 }
 
 onMounted(() => {
+  console.log('Component mounted, checking recipe...')
+
+  // Debugging: Store state checken
+  console.log('All recipes in store:', recipeStore.recipes?.length || 0)
+  if (recipeStore.recipes && recipeStore.recipes.length > 0) {
+    console.log('First recipe ID type:', typeof recipeStore.recipes[0].id)
+    console.log('All recipe IDs:', recipeStore.recipes.map(r => `${r.id} (${typeof r.id})`))
+  }
+
   if (!recipe.value) {
+    console.log('Recipe not found, redirecting to home')
     router.push('/')
   } else {
+    console.log('Recipe found successfully')
     isLoading.value = false
   }
 })
