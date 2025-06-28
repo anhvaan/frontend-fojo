@@ -62,11 +62,21 @@ export const useRecipeStore = defineStore('recipe', () => {
   }
 
   function getRecipeById(id: string) {
-    return recipes.value.find(recipe => recipe.id === id)
+    console.log('Store: Looking for recipe with ID:', id, typeof id)
+    console.log('Store: Available recipe IDs:', recipes.value.map(r => `${r.id} (${typeof r.id})`))
+
+    // Robuste Suche: Beide Werte zu String konvertieren
+    const foundRecipe = recipes.value.find(recipe =>
+      String(recipe.id) === String(id)
+    )
+
+    console.log('Store: Found recipe:', foundRecipe ? 'YES' : 'NO')
+    return foundRecipe
   }
 
   async function toggleFavorite(id: string) {
-    const recipe = recipes.value.find(r => r.id === id)
+    // TYPE-FIX: String-Vergleich verwenden
+    const recipe = recipes.value.find(r => String(r.id) === String(id))
     if (!recipe || recipe.userId !== authStore.user?.id) return
 
     isLoading.value = true
@@ -79,7 +89,7 @@ export const useRecipeStore = defineStore('recipe', () => {
       })
 
       // Frontend aktualisieren mit Backend-Response
-      const index = recipes.value.findIndex(r => r.id === id)
+      const index = recipes.value.findIndex(r => String(r.id) === String(id))
       if (index !== -1) {
         recipes.value[index] = response.data
       }
@@ -124,7 +134,14 @@ export const useRecipeStore = defineStore('recipe', () => {
     isLoading.value = true
     error.value = null
     try {
-      const existing = recipes.value.find(r => r.id === id)
+      console.log('UpdateRecipe: Looking for recipe with ID:', id, typeof id)
+      console.log('UpdateRecipe: Available recipes:', recipes.value.map(r => `${r.id} (${typeof r.id})`))
+
+      // TYPE-FIX: String-Vergleich verwenden
+      const existing = recipes.value.find(r => String(r.id) === String(id))
+
+      console.log('UpdateRecipe: Found existing recipe:', existing ? 'YES' : 'NO')
+
       if (!existing) throw new Error('Rezept nicht gefunden')
       if (existing.userId !== authStore.user?.id) {
         throw new Error('Nicht berechtigt zur Bearbeitung')
@@ -138,7 +155,8 @@ export const useRecipeStore = defineStore('recipe', () => {
 
       const response = await axios.put(`${baseUrl}/api/recipes/${id}`, payload)
 
-      const index = recipes.value.findIndex(r => r.id === id)
+      // TYPE-FIX: String-Vergleich verwenden
+      const index = recipes.value.findIndex(r => String(r.id) === String(id))
       if (index !== -1) recipes.value[index] = response.data
 
       return { success: true }
@@ -155,7 +173,14 @@ export const useRecipeStore = defineStore('recipe', () => {
     isLoading.value = true
     error.value = null
     try {
-      const recipe = recipes.value.find(r => r.id === id)
+      console.log('DeleteRecipe: Looking for recipe with ID:', id, typeof id)
+      console.log('DeleteRecipe: Available recipes:', recipes.value.map(r => `${r.id} (${typeof r.id})`))
+
+      // TYPE-FIX: String-Vergleich verwenden
+      const recipe = recipes.value.find(r => String(r.id) === String(id))
+
+      console.log('DeleteRecipe: Found recipe:', recipe ? 'YES' : 'NO')
+
       if (!recipe) throw new Error('Rezept nicht gefunden')
       if (recipe.userId !== authStore.user?.id) {
         throw new Error('Nicht berechtigt zum Löschen')
@@ -163,7 +188,8 @@ export const useRecipeStore = defineStore('recipe', () => {
 
       await axios.delete(`${baseUrl}/api/recipes/${id}`)
 
-      recipes.value = recipes.value.filter(r => r.id !== id)
+      // TYPE-FIX: String-Vergleich verwenden
+      recipes.value = recipes.value.filter(r => String(r.id) !== String(id))
 
       return { success: true }
     } catch (err) {
