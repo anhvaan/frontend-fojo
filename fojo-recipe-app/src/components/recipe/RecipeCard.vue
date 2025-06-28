@@ -29,13 +29,9 @@ const imageUrl = computed(() => {
   )
 })
 
-const isLoading = computed(() => recipeStore.isLoading)
-
-// Fixed: async function mit proper event handling
-const handleToggleFavorite = async (event: Event) => {
-  event.stopPropagation()
+const toggleFavorite = (event: Event) => {
   event.preventDefault()
-  await recipeStore.toggleFavorite(props.recipe.id)
+  recipeStore.toggleFavorite(props.recipe.id)
 }
 </script>
 
@@ -47,8 +43,7 @@ const handleToggleFavorite = async (event: Event) => {
         <button
           class="favorite-button"
           :class="{ 'is-favorite': recipe.isFavorite }"
-          @click.stop.prevent="handleToggleFavorite"
-          :disabled="isLoading"
+          @click="toggleFavorite"
           :title="recipe.isFavorite ? 'Remove from favorites' : 'Add to favorites'"
         >
           ★
@@ -159,22 +154,14 @@ const handleToggleFavorite = async (event: Event) => {
   font-size: 1.25rem;
   color: #ccc;
   transition: all 0.2s ease;
-  z-index: 10;
 }
 
 .favorite-button:hover {
   transform: scale(1.1);
-  background: rgba(255, 255, 255, 1);
 }
 
 .favorite-button.is-favorite {
   color: var(--color-primary);
-}
-
-.favorite-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
 }
 
 .recipe-content {
