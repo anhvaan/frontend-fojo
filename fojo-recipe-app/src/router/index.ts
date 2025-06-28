@@ -60,18 +60,18 @@ export function setupNavigationGuards(router: Router): void {
       const authStore = useAuthStore()
       const isLoggedIn = authStore.isLoggedIn
 
-    // Route requires authentication
-    if (to.meta.requiresAuth && !isLoggedIn) {
-      return next({ name: 'login' })
-    }
+      // Route requires authentication
+      if (to.meta.requiresAuth && !isLoggedIn) {
+        return next({ name: 'login' })
+      }
 
-    // Route requires guest (non-authenticated) user
-    if (to.meta.requiresGuest && isLoggedIn) {
-      return next({ name: 'home' })
-    }
+      // Route requires guest (non-authenticated) user
+      if (to.meta.requiresGuest && isLoggedIn) {
+        return next({ name: 'home' })
+      }
 
-    next()
-  })
+      next()
+    })
 }
 
 export default routes
