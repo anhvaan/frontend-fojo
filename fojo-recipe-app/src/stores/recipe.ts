@@ -30,7 +30,7 @@ export interface RecipeFormData {
   imageUrl?: string
 }
 
-const baseUrl = 'http://localhost:8080'
+const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL
 
 export const useRecipeStore = defineStore('recipe', () => {
   const recipes = ref<Recipe[]>([])
