@@ -16,4 +16,5 @@ jobs:
         working-directory: fojo-recipe-app
       - name: Run tests
         run: npm run test:unit
+        working-directory: fojo-recipe-app
 
